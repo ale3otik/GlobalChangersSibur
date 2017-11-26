@@ -95,8 +95,8 @@ def plot_with_target(ts, target):
     plt.plot(X[indices],Y[indices],'o',color='red')
     plt.show()
 
-def get_model_score(target, ts, model=LogisticRegression(),X_length = 50):
-    return models.train_test_score(model, ts, target, length=X_length)
+def get_model_score(target, ts, model=LogisticRegression(),X_length = 50,return_proba=False):
+    return models.train_test_score(model, ts, target, length=X_length, return_proba=return_proba)
 
 def end_to_end(path, 
         lag_to_drop=70, 
@@ -132,3 +132,26 @@ def end_to_end(path,
         features = np.abs(df['trend'].values)
         score = get_model_score(targets, features, X_length=X_length)
         return score 
+
+def plot_targets_colored(series, y_true, y_pred, size=500, edges=False):
+    true_index = set()
+    plt.style.use('ggplot')
+    plt.figure(figsize=(15,5))
+    if edges:
+        plt.plot(np.arange(len(series)), series)
+    for i, y in enumerate(y_true):
+        if y > 0:
+            true_index.add(i)
+    false_index = set(np.arange(len(series))) - true_index
+    series_true = [x for i, x in enumerate(series) if i in true_index]
+    series_false = [x for i, x in enumerate(series) if i in false_index]
+    
+    y_pred_true = [y for i, y in enumerate(y_pred) if i in true_index]
+    y_pred_false = [y for i, y in enumerate(y_pred) if i in false_index]
+    cmap = plt.cm.get_cmap('seismic')
+    sc = plt.scatter(sorted(true_index), series_true, c=1 - np.array(y_pred_true),
+                cmap = cmap, edgecolors='red', linewidth=5,s=size)
+    plt.scatter(sorted(false_index), series_false, c=1 - np.array(y_pred_false), 
+                cmap=cmap,s=size)
+    plt.colorbar(sc)
+    # plt.show()

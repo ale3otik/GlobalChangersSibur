@@ -8,7 +8,7 @@ def generate_X(ts, length):
         X.append(ts[pos-length:pos])
     return np.array(X)
 
-def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=False):
+def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=False, return_proba=False):
     y = y[length:]
 
     if plot:
@@ -24,5 +24,6 @@ def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=Fal
 
     roc_auc_test = roc_auc_score(y_score=test_proba, y_true=y_test)
     roc_auc_train = roc_auc_score(y_score=train_proba, y_true=y_train)
-
+    if return_proba:
+        return (roc_auc_train, roc_auc_test), (train_proba, test_proba)
     return roc_auc_train, roc_auc_test
