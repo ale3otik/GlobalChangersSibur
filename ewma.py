@@ -14,7 +14,7 @@ def get_target(data, top=.05, **kwargs):
     for i in range(ewma.shape[1]):
         a = ewma[:, i]
         a = a[np.isfinite(a)]
-        k = int(top * a.shape[0])
+        k = int((1.0 - top) * a.shape[0])
         ewma_k_stat.append(np.partition(a, k)[:k].max())
     ewma_k_stat = np.array(ewma_k_stat)
     target = np.array([[1 if np.isfinite(ewma[i, j]) and ewma[i, j] >= ewma_k_stat[j] else 0
