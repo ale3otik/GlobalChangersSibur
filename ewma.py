@@ -6,7 +6,6 @@ import re
 import pickle
 import matplotlib.pyplot as plt
 
-
 def get_target(data, top=.05, **kwargs):
     '''accepts dataframe of numeric, returns np.array of shape (data.shape[0], data.shape[1]) with 1s and 0s'''
     ewma = np.array(data.ewm(**kwargs).var())
@@ -45,3 +44,22 @@ def get_target_future(data, horizont=1000, min_anomaly=50, top=.1, **kwargs):
 # target = get_target_future(train[['efficiency', 'energy_cons', 'quality']],
 #                            horizont=1000, min_anomaly=100, top=.01,
 #                            halflife=100)
+
+
+
+# lightweight # 
+def moving_dispersion(x, window):
+    disp = []
+    length = len(x)
+    x = np.concatenate([x,np.ones(window, dtype=np.float32) * np.mean(x[-10:])]) 
+    for pos in range(length):
+        mean = np.mean(x[pos:pos + window])
+        diff = np.array(x[pos:pos + window]) - mean
+        disp.append(np.mean(diff**2))
+    return np.array(disp)
+def get_ma_target(df, window=50, top=0.05):
+    ma = moving_dispersion(df['trend'].values,window=window)
+    args = np.argsort(ma)
+    ans = np.zeros(len(args), dtype=np.float32)
+    ans[args[-int(top * len(args)):]] = 1
+    return ans
