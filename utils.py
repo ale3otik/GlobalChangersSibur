@@ -57,7 +57,7 @@ def get_dropped(ts, lag=10):
     
 def get_expanded_features(ts, freq= 11, log=True, lag_to_drop=None, plot=False):
     if log:
-        ts = np.log(ts + 10.0)
+        ts = np.log(ts + 1.0)
     res = sm.tsa.seasonal_decompose(ts, freq=freq)
     if plot:
         res.plot()
@@ -88,6 +88,9 @@ def plot_with_target(ts, target):
     X = np.arange(len(ts))
     Y = ts
     indices = [i for i in range(len(target)) if target[i]==1]
+    mean = np.mean(Y)
+    sigm = np.std(Y)
+    plt.ylim(mean - 7.0 * sigm, mean + 7.0 * sigm)
     plt.plot(X,Y)
     plt.plot(X[indices],Y[indices],'o',color='red')
     plt.show()

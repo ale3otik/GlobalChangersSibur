@@ -10,7 +10,7 @@ def generate_X(ts, length):
 
 def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=False):
     y = y[length:]
-    
+
     if plot:
         plot_with_target(ts,y)
     X = generate_X(ts,length)
@@ -25,4 +25,4 @@ def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=Fal
     roc_auc_test = roc_auc_score(y_score=test_proba, y_true=y_test)
     roc_auc_train = roc_auc_score(y_score=train_proba, y_true=y_train)
 
-    return roc_auc_test, roc_auc_train
+    return roc_auc_train, roc_auc_test
