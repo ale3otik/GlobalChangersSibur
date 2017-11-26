@@ -35,6 +35,8 @@ def bad_to_mean(df):
     return df
 
 def tofloat(v):
+    if isinstance(v, float):
+        return v
     if v.find(',') < 0:
         return float(v)
 
