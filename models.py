@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, r2_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge
 
 def generate_X(ts, length):
     X = []
@@ -29,7 +31,7 @@ def train_test_score(model, ts, y, train_size=0.75, length=2 * 60 * 60, plot=Fal
         return (roc_auc_train, roc_auc_test), (train_proba, test_proba)
     return roc_auc_train, roc_auc_test
 
-def train_test_run(model_y, model_sigma, ts, sigmas, y, train_size=0.75,
+def train_test_run(ts, sigmas, y, model_y=LogisticRegression(), model_sigma=Ridge(), train_size=0.75,
     length=2 * 60 * 60, plot=False, return_proba=False):
     y = y[length:]
     sigmas = sigmas[length:]

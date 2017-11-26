@@ -57,11 +57,14 @@ def moving_dispersion(x, window):
         diff = np.array(x[pos:pos + window]) - mean
         disp.append(np.mean(diff**2))
     return np.array(disp)
-def get_ma_target(df, window=50, top=0.05):
+
+def get_ma_target(df, window=50, top=0.05, horizont=2*60*11):
     ma = moving_dispersion(df['trend'].values,window=window)
     args = np.argsort(ma)
     ans = np.zeros(len(args), dtype=np.float32)
     ans[args[-int(top * len(args)):]] = 1
+    ans = np.array(ans)
+    ans = np.roll(ans, -horizont)
     return ans
 
 
