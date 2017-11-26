@@ -3,7 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import gaussian_mixture_anomaly_detection as ad
+import models
+import ewma
+from sklearn.linear_model import LogisticRegression
 from copy import deepcopy
+
+def clip(ts,treshold=3.0):
+    plt.figure(figsize=(12,8))
+    plt.plot(range(len(ts)), ts)
+    mean = np.mean(ts)
+    diff = np.abs(ts - mean)
+    sigm = np.std(ts)
+    print(sigm)
+    # plt.plot(range(len(ts)), diff)
+    indices = np.where(diff > treshold * sigm)
+    ts[indices] = mean + np.sign(ts[indices]) * treshold * sigm
+    plt.plot(range(len(ts)), ts)
+    plt.show()
+    return ts
 
 def read_ts(file):
     df = pd.read_csv(file,delimiter=';')
@@ -30,7 +47,7 @@ def tofloat(v):
 def get_targets_with_mixture(data,horizont,T=None,top=0.0005):
     if T is None:
         T = data.shape[0]
-    return ad.extract_anomaly_target(data,frame_period=T,halflife=10,horizont=horizont,top=top)
+    return ad.extract_anomaly_target(data,frame_period=T,halflife=horizont,horizont=horizont,top=top)
 
 def get_dropped(ts, lag=10):
     return np.array([ts[i*lag] for i in range(len(ts)//lag)])
@@ -71,3 +88,40 @@ def plot_with_target(ts, target):
     plt.plot(X,Y)
     plt.plot(X[indices],Y[indices],'o',color='red')
     plt.show()
+
+def get_model_score(target, ts, model=LogisticRegression(),X_length = 50):
+    return models.train_test_score(model, ts, target, length=X_length)
+
+def end_to_end(path, 
+        lag_to_drop=70, 
+        target_extract_method='mixture', 
+        clip_treshold=None,
+        horizont = 60 * 11,
+        X_length=50,
+        top=0.005,
+        plot=False):
+    print('Reading data from \"' + path + '\"...')
+
+    train = bad_to_mean(read_ts(path))
+    train = bad_to_mean(train)
+    origin_ts = train[' value'].values
+    if not clip_treshold is None:
+        origin_ts = clip(origin_ts,clip_treshold)
+    
+    print('TSA decomposition...')
+    print('lag_to_drop',lag_to_drop)
+    df = get_expanded_features(origin_ts, lag_to_drop=lag_to_drop)
+    horizont = horizont//lag_to_drop
+    if target_extract_method == 'mixture':
+        targets = get_targets_with_mixture(df,horizont=horizont,top=top)
+        if plot:
+            plot_with_target(df['trend'].values, targets)
+        features = np.abs(df['trend'].values)
+        score = get_model_score(targets, features, X_length=X_length)
+        return score 
+
+    if target_extract_method == 'ewma':
+        targets = ewma.get_target_future(df[['trend']],horizont=horizont, top=top, halflife=horizont//2)
+        features = np.abs(df['trend'].values)
+        score = get_model_score(targets, features, X_length=X_length)
+        return score 

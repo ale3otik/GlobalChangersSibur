@@ -63,3 +63,6 @@ def get_ma_target(df, window=50, top=0.05):
     ans = np.zeros(len(args), dtype=np.float32)
     ans[args[-int(top * len(args)):]] = 1
     return ans
+
+
+
