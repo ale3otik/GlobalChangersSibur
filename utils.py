@@ -7,6 +7,8 @@ import models
 import ewma
 from sklearn.linear_model import LogisticRegression
 from copy import deepcopy
+import matplotlib.style
+import matplotlib as mpl 
 
 def clip(ts,treshold=3.0):
     plt.figure(figsize=(12,8))
@@ -76,8 +78,8 @@ def get_expanded_features(ts, freq= 11, log=True, lag_to_drop=None, plot=False):
         trend = get_dropped(trend, lag_to_drop)
         season = get_dropped(season, lag_to_drop)
         diff = get_dropped(diff, lag_to_drop)
-    df = pd.DataFrame(data = np.concatenate([[trend], [season], [diff]], axis=0).T,
-                                columns=['trend', 'season', 'diff'])
+    df = pd.DataFrame(data = np.concatenate([[trend], [np.abs(diff)] , [diff]], axis=0).T,
+                                columns=['trend', 'absdiff', 'diff'])
     return df
 
 def unite_features(list_df):
@@ -95,8 +97,8 @@ def plot_with_target(ts, target):
     plt.plot(X[indices],Y[indices],'o',color='red')
     plt.show()
 
-def get_model_score(target, ts, model=LogisticRegression(),X_length = 50,return_proba=False):
-    return models.train_test_score(model, ts, target, length=X_length, return_proba=return_proba)
+# def get_model_score(target, ts, model=LogisticRegression(),X_length = 50,return_proba=False):
+#     return models.train_test_score(model, ts, target, length=X_length, return_proba=return_proba)
 
 def end_to_end(path, 
         lag_to_drop=70, 
@@ -123,19 +125,19 @@ def end_to_end(path,
         targets = get_targets_with_mixture(df,horizont=horizont,halflife=halflife,top=top)
         if plot:
             plot_with_target(df['trend'].values, targets)
-        features = np.abs(df['trend'].values)
-        score = get_model_score(targets, features, X_length=X_length)
+        sigmas = ewma.moving_dispersion(df['trend'].values, window=10)
+        score = models.train_test_run(df[['trend','absdiff']], sigmas, targets,length=X_length)
         return score 
 
-    if target_extract_method == 'ewma':
-        targets = ewma.get_target_future(df[['trend']],horizont=horizont, top=top, halflife=halflife)
-        features = np.abs(df['trend'].values)
-        score = get_model_score(targets, features, X_length=X_length)
-        return score 
+    # if target_extract_method == 'ewma':
+    #     targets = ewma.get_target_future(df[['trend']],horizont=horizont, top=top, halflife=halflife)
+    #     features = np.abs(df['trend'].values)
+    #     score = get_model_score(targets, features, X_length=X_length)
+    #     return score 
 
 def plot_targets_colored(series, y_true, y_pred, size=500, edges=False):
     true_index = set()
-    plt.style.use('ggplot')
+    # plt.style.use('ggplot')
     plt.figure(figsize=(15,5))
     if edges:
         plt.plot(np.arange(len(series)), series)
