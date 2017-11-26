@@ -10,7 +10,7 @@ from copy import deepcopy
 
 def clip(ts,treshold=3.0):
     plt.figure(figsize=(12,8))
-    plt.plot(range(len(ts)), ts)
+    ts1 = deepcopy(ts)
     mean = np.mean(ts)
     diff = np.abs(ts - mean)
     sigm = np.std(ts)
@@ -18,7 +18,8 @@ def clip(ts,treshold=3.0):
     # plt.plot(range(len(ts)), diff)
     indices = np.where(diff > treshold * sigm)
     ts[indices] = mean + np.sign(ts[indices]) * treshold * sigm
-    plt.plot(range(len(ts)), ts)
+    plt.plot(range(len(ts)), ts, alpha=0.5)
+    plt.plot(range(len(ts)), ts1, alpha=0.5)
     plt.show()
     return ts
 
@@ -44,10 +45,10 @@ def tofloat(v):
         v = v[p+1:]
     return float(v.replace(',','.'))
 
-def get_targets_with_mixture(data,horizont,T=None,top=0.0005):
+def get_targets_with_mixture(data,horizont,halflife,T=None,top=0.0005):
     if T is None:
         T = data.shape[0]
-    return ad.extract_anomaly_target(data,frame_period=T,halflife=horizont,horizont=horizont,top=top)
+    return ad.extract_anomaly_target(data,frame_period=T,halflife=halflife,horizont=horizont,top=top)
 
 def get_dropped(ts, lag=10):
     return np.array([ts[i*lag] for i in range(len(ts)//lag)])
@@ -97,6 +98,7 @@ def end_to_end(path,
         target_extract_method='mixture', 
         clip_treshold=None,
         horizont = 60 * 11,
+        halflife=10,
         X_length=50,
         top=0.005,
         plot=False):
@@ -113,7 +115,7 @@ def end_to_end(path,
     df = get_expanded_features(origin_ts, lag_to_drop=lag_to_drop)
     horizont = horizont//lag_to_drop
     if target_extract_method == 'mixture':
-        targets = get_targets_with_mixture(df,horizont=horizont,top=top)
+        targets = get_targets_with_mixture(df,horizont=horizont,halflife=halflife,top=top)
         if plot:
             plot_with_target(df['trend'].values, targets)
         features = np.abs(df['trend'].values)
@@ -121,7 +123,7 @@ def end_to_end(path,
         return score 
 
     if target_extract_method == 'ewma':
-        targets = ewma.get_target_future(df[['trend']],horizont=horizont, top=top, halflife=horizont//2)
+        targets = ewma.get_target_future(df[['trend']],horizont=horizont, top=top, halflife=halflife)
         features = np.abs(df['trend'].values)
         score = get_model_score(targets, features, X_length=X_length)
         return score 
