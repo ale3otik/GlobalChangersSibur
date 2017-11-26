@@ -253,7 +253,7 @@ class GaussianMixtureInTimeAnomalyDetector:
 
 
 def extract_anomaly_target(frame, frame_period, halflife,
-                            horizont, n_components=35, top=0.01):
+                            horizont, n_components=35, top=0.01, more_info=False):
     assert len(frame.shape) == 2
     assert isinstance(frame, pd.DataFrame)
     frame = np.array(deepcopy(frame))
@@ -267,7 +267,7 @@ def extract_anomaly_target(frame, frame_period, halflife,
     detector = GaussianMixtureInTimeAnomalyDetector(n_components=n_components, random_state=1)
     scores = detector.fit(data)
     smoothed_scores = detector.smoothed_sample_anomalies(scores, halflife)
-    anomalies, treshold = detector.find_anomalies(scores, anomaly_top=top)
+    anomalies, treshold = detector.find_anomalies(smoothed_scores, anomaly_top=top)
     anomaly_indexes = [t[1][0] * frame_period + t[1][1] for t in anomalies]
     all_anomalies = set()
     for a in anomaly_indexes:
@@ -279,4 +279,7 @@ def extract_anomaly_target(frame, frame_period, halflife,
     for a in all_anomalies:
         targets[a] = 1
 
-    return targets
+    if more_info:
+        return targets, scores, smoothed_scores, treshold
+    else:
+        return targets
