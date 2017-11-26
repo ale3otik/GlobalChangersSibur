@@ -39,6 +39,7 @@ class GaussianMixtureInTimeAnomalyDetector:
                     tol=1e-6,
                     covariance_type='diag',
                     init_params='kmeans',
+                    max_iter=500,
                     random_state=None,
                 ):
         '''
@@ -52,6 +53,7 @@ class GaussianMixtureInTimeAnomalyDetector:
         self.covariance_type = covariance_type
         self.init_params = init_params
         self.random_state = random_state
+        self.max_iter = max_iter
 
         self.eps = 1e-12  # feature-normalization constant
 
@@ -83,6 +85,7 @@ class GaussianMixtureInTimeAnomalyDetector:
             covariance_type=self.covariance_type,
             init_params=self.init_params,
             random_state=self.random_state,
+            max_iter=self.max_iter,
                             )
 
         gm.fit(X)
@@ -182,7 +185,7 @@ class GaussianMixtureInTimeAnomalyDetector:
 
     def __evaluate_log_likelihood(self, X):
         log_likelihood = np.zeros(X.shape[:2])
-        for f in np.arange(X.shape[0]):
+        for f in tqdm(np.arange(X.shape[0]), position=0):
             for t in np.arange(X.shape[1]):
                 log_likelihood[f][t] = self.__evaluate_sample_in_time(X[f][t], t)
 
